@@ -167,3 +167,37 @@ Ranked by ratio of (pain removed) / (ST-core surgery required):
 ---
 
 *Generated from scan of NemoPresetExt v4.7.0 against ST staging @ 767746beb.*
+
+---
+
+## Progress scoreboard (updated live as `nemo-integration` advances)
+
+| # | Action | Status | Commits |
+|---|---|---|---|
+| 1 | `data-st-role` attributes (prompt list, WI, personas, chat, backgrounds) | ✅ shipped | `feat(prompt-manager)`, `feat(world-info)`, `feat(personas)`, `feat(chat)` |
+| 2 | Expand `eventSource` with render-complete events | ✅ partial — prompt list, WI entry+list, persona list, panel shown/hidden, prompt toggle, background changed; still missing: autocomplete, chat submit | 6 commits |
+| 3 | `SillyTavern.ready` promise + `APP_READY` event | ✅ shipped | `feat(events): SillyTavern.ready` |
+| 4 | `setBackground` / `getMediaType` module exports + `registerBackgroundProvider` API | ✅ shipped | `feat(backgrounds)` |
+| 5 | WI entry rendering hook | ✅ shipped | `feat(world-info)` |
+| 6 | Split `script.js` into concern modules | ⏳ not yet | |
+| 7 | `extension-api.js` re-export barrel | ✅ shipped | `feat(api)` — 37 symbols from 12 source modules |
+| 8 | Public `EXTENSION-CONTRACT.md` (replaces the planned SELECTORS.md) | ✅ shipped | `docs/EXTENSION-CONTRACT.md` |
+
+### Hacks killed (from NemoPresetExt's monkey-patch + observer pile)
+
+- `window.setBackground = …` (2 copies, both files) ✅
+- `window.getMediaType = …` ✅
+- `window.getWorldEntry = async function(...)` ✅
+- `window.displayWorldEntries = async function(...)` ✅
+- `OBSERVER_INIT_DELAY: 500` race ✅
+- MutationObserver on `#completion_prompt_manager_list` (full-list watch) ✅ killed; toggle-replacement sub-case ✅ covered by `PROMPT_TOGGLE_CHANGED`
+- MutationObserver on `#user_avatar_block` ✅
+- MutationObserver on `.openDrawer` / panel visibility ✅ (covered by `PANEL_SHOWN` / `PANEL_HIDDEN`)
+- Deep `../../../../script.js` imports ✅ (barrel available; extension migration is a follow-up)
+
+### Still open
+
+- `window.onYouTubeIframeAPIReady` — Google's callback global is unavoidable; extension's wrap-existing pattern is fine
+- Full `script.js` split (12,505 LOC → ~12 concern modules)
+- Some remaining extension observers (directive-ui, extensions-tab-overhaul, category-tray) waiting on similar per-feature hooks
+- Porting the extension's prompt-manager collapsible-sections feature into ST core proper (planned)
