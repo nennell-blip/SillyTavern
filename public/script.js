@@ -275,7 +275,7 @@ import { initWelcomeScreen, openPermanentAssistantChat, openPermanentAssistantCa
 import { initDataMaid } from './scripts/data-maid.js';
 import { clearItemizedPrompts, deleteItemizedPromptForMessage, deleteItemizedPrompts, findItemizedPromptSet, initItemizedPrompts, itemizedParams, itemizedPrompts, loadItemizedPrompts, promptItemize, replaceItemizedPromptText, saveItemizedPrompts, swapItemizedPrompts } from './scripts/itemized-prompts.js';
 import { getSystemMessageByType, initSystemMessages, SAFETY_CHAT, sendSystemMessage, system_message_types, system_messages } from './scripts/system-messages.js';
-import { event_types, eventSource } from './scripts/events.js';
+import { event_types, eventSource, appReady } from './scripts/events.js';
 import { initAccessibility } from './scripts/a11y.js';
 import { applyStreamFadeIn } from './scripts/util/stream-fadein.js';
 import { initDomHandlers } from './scripts/dom-handlers.js';
@@ -292,6 +292,10 @@ import { canJumpToSwipeForMessage, canOpenSwipePickerForMessage, initSwipePicker
 globalThis.SillyTavern = {
     libs,
     getContext,
+    // Promise that resolves with `globalThis.SillyTavern` once boot finishes.
+    // Prefer `const st = await SillyTavern.ready; st.eventSource.on(...)` over
+    // subscribing to APP_READY + setTimeout polls.
+    ready: appReady.then(() => globalThis.SillyTavern),
 };
 
 export {

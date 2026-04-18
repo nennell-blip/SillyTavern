@@ -111,3 +111,18 @@ export const event_types = {
 };
 
 export const eventSource = new EventEmitter([event_types.APP_READY, event_types.APP_INITIALIZED]);
+
+/**
+ * Resolves once the app has finished booting (after `APP_READY` fires).
+ *
+ * Extensions should prefer `await appReady` (or `await SillyTavern.ready`)
+ * over subscribing to `APP_READY` with `eventSource.on(...)` + a fallback
+ * `setTimeout` poll. The underlying EventEmitter has `autoFireAfterEmit`
+ * enabled for `APP_READY`, so this promise resolves reliably regardless
+ * of whether the module importing it loads before or after the event fires.
+ *
+ * Replaces the old `OBSERVER_INIT_DELAY`-style "wait a bit and hope" dance.
+ */
+export const appReady = new Promise((resolve) => {
+    eventSource.on(event_types.APP_READY, () => resolve());
+});
