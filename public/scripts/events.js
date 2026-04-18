@@ -113,15 +113,27 @@ export const event_types = {
     // characterId: number|null, promptCount: number }. Extensions should
     // subscribe to this instead of running a MutationObserver on the list.
     PROMPT_LIST_RENDERED: 'prompt_list_rendered',
+    // Fired after a single world-info entry element is built by
+    // getWorldEntry. Payload: { element: JQuery, entry, worldName, data }.
+    // Replaces the `window.getWorldEntry = ...` monkey-patch pattern.
+    WORLDINFO_ENTRY_RENDERED: 'worldinfo_entry_rendered',
+    // Fired after the WI entries list finishes rendering. Payload:
+    // { list: HTMLElement|null, worldName, data, entryCount }.
+    // Replaces the `window.displayWorldEntries = ...` monkey-patch.
+    WORLDINFO_LIST_RENDERED: 'worldinfo_list_rendered',
 };
 
 export const eventSource = new EventEmitter([
     event_types.APP_READY,
     event_types.APP_INITIALIZED,
     // Auto-fire so extensions that subscribe *after* the first render still
-    // get invoked with the most recent list. Matches the autoFire semantics
+    // get invoked with the most recent args. Matches the autoFire semantics
     // of APP_READY — "I'm here, catch me up".
     event_types.PROMPT_LIST_RENDERED,
+    event_types.WORLDINFO_LIST_RENDERED,
+    // WORLDINFO_ENTRY_RENDERED intentionally NOT auto-fired — it fires
+    // per-entry during a list build; auto-firing would re-hit the
+    // subscriber with whichever entry was last and confuse them.
 ]);
 
 /**

@@ -2602,6 +2602,15 @@ async function displayWorldEntries(name, data, navigation = navigation_option.no
     });
 
     //$("#world_popup_entries_list").disableSelection();
+
+    // Signal to extensions that the WI entry list finished (re)rendering.
+    // Subscribe with eventSource.on(event_types.WORLDINFO_LIST_RENDERED, ...).
+    eventSource.emit(event_types.WORLDINFO_LIST_RENDERED, {
+        list: document.getElementById('world_popup_entries_list'),
+        worldName: name,
+        data,
+        entryCount: data?.entries ? Object.keys(data.entries).length : 0,
+    });
 }
 
 export const originalWIDataKeyMap = {
@@ -3788,6 +3797,17 @@ export async function getWorldEntry(name, data, entry) {
     }
 
     headerTemplate.find('.inline-drawer-content').css('display', 'none');
+
+    // Signal to extensions that a WI entry element has been built.
+    // Payload carries the jQuery element + entry data so subscribers can
+    // decorate it without running a MutationObserver on the WI list.
+    // Replaces the `window.getWorldEntry = ...` monkey-patch pattern.
+    eventSource.emit(event_types.WORLDINFO_ENTRY_RENDERED, {
+        element: headerTemplate,
+        entry,
+        worldName: name,
+        data,
+    });
 
     return headerTemplate;
 }
