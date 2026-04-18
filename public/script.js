@@ -296,6 +296,11 @@ globalThis.SillyTavern = {
     // Prefer `const st = await SillyTavern.ready; st.eventSource.on(...)` over
     // subscribing to APP_READY + setTimeout polls.
     ready: appReady.then(() => globalThis.SillyTavern),
+    // Event bus + event name enum as public surface. Saves extensions from
+    // having to import from '../../../../script.js' (a deep relative path
+    // that pins them to ST's exact folder layout).
+    eventSource,
+    event_types,
     // Lazily populated by the respective modules during boot. Extensions
     // should always dereference through this object, never the deep import
     // paths — they are the stable, versionable public API surface.

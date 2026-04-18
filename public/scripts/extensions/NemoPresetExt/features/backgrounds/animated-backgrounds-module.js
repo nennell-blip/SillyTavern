@@ -568,76 +568,57 @@ export class AnimatedBackgroundsModule {
     }
 
     /**
-     * Hook into SillyTavern's background system
+     * Hook into SillyTavern's background system via the provider API.
+     * Replaces the previous `window.setBackground` / `window.getMediaType`
+     * overrides. The provider chain in ST core is the composition point now —
+     * no monkey-patching, no "originalSetBackground" dance.
      */
     hookIntoBackgroundSystem() {
-        // Store original functions
-        const originalSetBackground = window.setBackground;
-        const originalGetMediaType = window.getMediaType;
-        
-        // Store original setBackground for later use
-        this.originalSetBackground = originalSetBackground;
-        
-        // Override getMediaType if it exists
-        if (originalGetMediaType) {
-            window.getMediaType = (fileName) => {
-                const enhancedType = this.getEnhancedMediaType(fileName);
-                // Map our enhanced types back to SillyTavern's expected types
-                switch (enhancedType) {
-                    case this.MEDIA_TYPES.VIDEO:
-                        return 'video';
-                    case this.MEDIA_TYPES.YOUTUBE:
-                        return 'embed';
-                    case this.MEDIA_TYPES.ANIMATED_IMAGE:
-                        return 'image'; // SillyTavern treats these as images
-                    default:
-                        return 'image';
-                }
-            };
+        const st = globalThis.SillyTavern;
+        if (!st?.backgrounds?.registerBackgroundProvider) {
+            logger.warn(`${LOG_PREFIX} SillyTavern.backgrounds API not available — this extension now requires the integration fork.`);
+            return;
         }
 
-        // Override setBackground if it exists
-        if (originalSetBackground) {
-            window.setBackground = (bg, url, mediaType) => {
-                // Check if this is a stored video blob
+        // Kept as a reference for internal helpers (e.g. the transparent-
+        // behind-YouTube swap in loadYouTubeVideoInBackground).
+        this.originalSetBackground = st.backgrounds.setBackground;
+
+        const self = this;
+        st.backgrounds.registerBackgroundProvider({
+            mediaType: 'animated',
+            test(url, bg) {
                 let resolvedUrl = url || bg;
                 if (bg && bg.startsWith('video_')) {
-                    const videoData = this.getVideoBlob(bg);
+                    const videoData = self.getVideoBlob(bg);
+                    if (videoData) resolvedUrl = videoData.blobUrl;
+                }
+                const t = self.getEnhancedMediaType(resolvedUrl || bg);
+                return [self.MEDIA_TYPES.VIDEO, self.MEDIA_TYPES.YOUTUBE, self.MEDIA_TYPES.ANIMATED_IMAGE].includes(t);
+            },
+            apply(target, url, bg) {
+                let resolvedUrl = url || bg;
+                if (bg && bg.startsWith('video_')) {
+                    const videoData = self.getVideoBlob(bg);
                     if (videoData) {
                         resolvedUrl = videoData.blobUrl;
-                        mediaType = this.MEDIA_TYPES.VIDEO;
                         logger.debug(`${LOG_PREFIX} Using stored video blob for:`, bg);
                     }
                 }
+                const t = self.getEnhancedMediaType(resolvedUrl || bg);
+                self.setAnimatedBackground(resolvedUrl, t);
+            },
+        });
 
-                // Use enhanced media type detection if not provided
-                if (!mediaType) {
-                    mediaType = this.getEnhancedMediaType(resolvedUrl || bg);
-                }
-                
-                // Use our enhanced background system for supported types
-                if ([this.MEDIA_TYPES.VIDEO, this.MEDIA_TYPES.YOUTUBE, this.MEDIA_TYPES.ANIMATED_IMAGE].includes(mediaType)) {
-                    this.setAnimatedBackground(resolvedUrl, mediaType);
-                } else {
-                    // For regular images, clear our enhanced background to prevent conflicts
-                    this.clearAnimatedBackground();
-                }
-                
-                // Still call original for compatibility
-                try {
-                    const compatType = mediaType === this.MEDIA_TYPES.YOUTUBE ? 'embed' : 
-                                     mediaType === this.MEDIA_TYPES.ANIMATED_IMAGE ? 'image' : 
-                                     mediaType;
-                    originalSetBackground.call(this, bg, resolvedUrl, compatType);
-                } catch (error) {
-                    logger.error(`${LOG_PREFIX} Error calling original setBackground:`, error);
-                }
-            };
+        // Clear the animated layer whenever a non-animated background wins
+        // the provider chain (e.g. the built-in image fallback).
+        st.eventSource.on(st.event_types.BACKGROUND_CHANGED, ({ mediaType }) => {
+            if (mediaType !== 'animated' && mediaType !== 'video' && mediaType !== 'youtube') {
+                self.clearAnimatedBackground();
+            }
+        });
 
-            logger.debug(`${LOG_PREFIX} Successfully hooked into background system`);
-        } else {
-            logger.warn(`${LOG_PREFIX} Could not find original setBackground function to hook into`);
-        }
+        logger.debug(`${LOG_PREFIX} Registered background provider via SillyTavern.backgrounds`);
     }
 
     /**

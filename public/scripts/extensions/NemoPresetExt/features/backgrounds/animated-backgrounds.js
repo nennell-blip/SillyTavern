@@ -289,29 +289,27 @@
     }
 
     /**
-     * Hook into SillyTavern's background system
+     * Hook into SillyTavern's background system via the provider API.
+     * Replaces the previous `window.setBackground` override — no more
+     * monkey-patching, no load-order fragility.
      */
     function hookIntoBackgroundSystem() {
-        // Override the original setBackground function
-        if (window.setBackground) {
-            const originalSetBackground = window.setBackground;
-            window.setBackground = function(bg, url, mediaType) {
-                // Use enhanced media type detection if not provided
-                if (!mediaType) {
-                    mediaType = getEnhancedMediaType(bg || url);
-                }
-                
-                // Use our enhanced background system for supported types
-                if ([MEDIA_TYPES.VIDEO, MEDIA_TYPES.YOUTUBE, MEDIA_TYPES.ANIMATED_IMAGE].includes(mediaType)) {
-                    setAnimatedBackground(url || bg, mediaType);
-                    
-                    // Still call original for compatibility
-                    originalSetBackground.call(this, bg, url, mediaType);
-                } else {
-                    originalSetBackground.call(this, bg, url, mediaType);
-                }
-            };
+        const st = globalThis.SillyTavern;
+        if (!st?.backgrounds?.registerBackgroundProvider) {
+            console.warn('[AnimatedBackgrounds] SillyTavern.backgrounds API not available — this extension now requires the integration fork.');
+            return;
         }
+        st.backgrounds.registerBackgroundProvider({
+            mediaType: 'animated',
+            test(url, bg) {
+                const t = getEnhancedMediaType(bg || url);
+                return [MEDIA_TYPES.VIDEO, MEDIA_TYPES.YOUTUBE, MEDIA_TYPES.ANIMATED_IMAGE].includes(t);
+            },
+            apply(target, url, bg) {
+                const t = getEnhancedMediaType(bg || url);
+                setAnimatedBackground(url || bg, t);
+            },
+        });
     }
 
     /**
