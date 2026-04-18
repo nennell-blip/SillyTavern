@@ -7356,10 +7356,10 @@
             </div>
         </div>
         <div id="message_template" class="template_element">
-            <div class="mes" mesid="" ch_name="" is_user="" is_system="" bookmark_link="">
+            <div class="mes" mesid="" ch_name="" is_user="" is_system="" bookmark_link="" data-st-role="chat-message">
                 <div class="for_checkbox"></div><input type="checkbox" class="del_checkbox">
                 <div class="mesAvatarWrapper">
-                    <div class="avatar">
+                    <div class="avatar" data-st-role="chat-avatar">
                         <img src="">
                     </div>
                     <div class="mesIDDisplay"></div>
@@ -7371,12 +7371,12 @@
                     <div class="ch_name flex-container justifySpaceBetween">
                         <div class="flex-container flex1 alignitemscenter">
                             <div class="flex-container alignItemsBaseline">
-                                <span class="name_text">${characterName}</span>
+                                <span class="name_text" data-st-role="chat-name">${characterName}</span>
                                 <i class="mes_ghost fa-solid fa-ghost" title="This message is invisible for the AI" data-i18n="[title]This message is invisible for the AI"></i>
                                 <small class="timestamp"></small>
                             </div>
                         </div>
-                        <div class="mes_buttons">
+                        <div class="mes_buttons" data-st-role="chat-actions">
                             <div title="Message Actions" class="mes_button extraMesButtonsHint fa-solid fa-ellipsis" data-i18n="[title]Message Actions"></div>
                             <div class="extraMesButtons">
                                 <div title="Translate message" class="mes_button mes_translate fa-solid fa-language" data-i18n="[title]Translate message"></div>
@@ -8046,7 +8046,7 @@
     </div>
     <div id="sheld">
         <div id="sheldheader" class="fa-solid fa-grip drag-grabber"></div>
-        <div id="chat">
+        <div id="chat" data-st-role="chat-scroll">
         </div>
         <div id="form_sheld">
             <div id="dialogue_del_mes">
