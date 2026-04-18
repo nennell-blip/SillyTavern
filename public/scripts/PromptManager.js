@@ -449,6 +449,14 @@ class PromptManager {
             promptOrderEntry.enabled = !promptOrderEntry.enabled;
             this.render();
             this.saveServiceSettings();
+
+            // Signal the state change so extensions can react without
+            // having to diff add/remove DOM mutations for the toggle icon.
+            eventSource.emit(event_types.PROMPT_TOGGLE_CHANGED, {
+                promptID,
+                enabled: promptOrderEntry.enabled,
+                characterId: this.activeCharacter?.id ?? null,
+            });
         };
 
         // Open edit form and load selected prompt

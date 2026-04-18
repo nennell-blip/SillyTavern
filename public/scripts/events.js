@@ -113,6 +113,11 @@ export const event_types = {
     // characterId: number|null, promptCount: number }. Extensions should
     // subscribe to this instead of running a MutationObserver on the list.
     PROMPT_LIST_RENDERED: 'prompt_list_rendered',
+    // Fired when a user toggles an individual prompt's enabled state.
+    // Payload: { promptID: string, enabled: boolean, characterId: number|null }.
+    // Pairs with PROMPT_LIST_RENDERED so extensions can tell "toggle"
+    // apart from "full re-render" without diffing DOM mutations.
+    PROMPT_TOGGLE_CHANGED: 'prompt_toggle_changed',
     // Fired after a single world-info entry element is built by
     // getWorldEntry. Payload: { element: JQuery, entry, worldName, data }.
     // Replaces the `window.getWorldEntry = ...` monkey-patch pattern.
