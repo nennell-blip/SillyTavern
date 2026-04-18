@@ -222,6 +222,7 @@ function getUserAvatarBlock(avatarId) {
     template.find('.ch_description').text(personaDescription || $('#user_avatar_block').attr('no_desc_text')).toggleClass('text_muted', !personaDescription);
     template.find('.ch_additional_info').text(personaTitle || '');
     template.attr('data-avatar-id', avatarId);
+    template.attr('data-st-role', 'persona-item');
     template.find('.avatar').attr('data-avatar-id', avatarId).attr('title', avatarId);
     template.toggleClass('default_persona', avatarId === power_user.default_persona);
     const avatarUrl = getThumbnailUrl('persona', avatarId, isFirefox());
@@ -306,6 +307,14 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
                 }
                 updatePersonaUIStates();
                 localizePagination($('#persona_pagination_container'));
+
+                // Signal to extensions that the persona list finished a
+                // (re)render pass. Replaces MutationObserver-on-persona-list.
+                eventSource.emit(event_types.PERSONA_LIST_RENDERED, {
+                    list: document.getElementById('user_avatar_block'),
+                    avatars: data,
+                    page: savePersonasPage || 1,
+                });
             },
             afterSizeSelectorChange: function (e, size) {
                 accountStorage.setItem(storageKey, e.target.value);

@@ -126,6 +126,10 @@ export const event_types = {
     // Replaces the `window.setBackground = ...` monkey-patch for extensions
     // that just need to react to changes without taking over the apply step.
     BACKGROUND_CHANGED: 'background_changed',
+    // Fired after the persona list finishes rendering a page of avatars.
+    // Payload: { list: HTMLElement|null, avatars: string[], page: number }.
+    // Replaces MutationObserver patterns on #user_avatar_block.
+    PERSONA_LIST_RENDERED: 'persona_list_rendered',
 };
 
 export const eventSource = new EventEmitter([
@@ -136,6 +140,7 @@ export const eventSource = new EventEmitter([
     // of APP_READY — "I'm here, catch me up".
     event_types.PROMPT_LIST_RENDERED,
     event_types.WORLDINFO_LIST_RENDERED,
+    event_types.PERSONA_LIST_RENDERED,
     // WORLDINFO_ENTRY_RENDERED intentionally NOT auto-fired — it fires
     // per-entry during a list build; auto-firing would re-hit the
     // subscriber with whichever entry was last and confuse them.
