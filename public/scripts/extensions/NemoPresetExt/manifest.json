@@ -1,0 +1,12 @@
+{
+    "display_name": "NemoPresetExt",
+    "author": "@NemoVonNirgend",
+    "version": "4.7.0",
+    "description": "Transforms the prompt manager with collapsible sections, triggers, and a full Preset Navigator. Core features only - no NemoLore, ProsePolisher, Ember, Card Emporium, MoodMusic, or NemoVRM.",
+    "requires": [],
+    "optional": [],
+    "js": "content.js",
+    "css": "styles.css",
+	"homePage": "https://github.com/NemoVonNirgend/NemoPresetExt",
+    "loading_order": 1000
+}
