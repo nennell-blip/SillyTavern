@@ -1436,14 +1436,75 @@ async function resolveImageUrl(bg, isCustom, isAnimated = null) {
     return `url("${thumbnailUrl}")`;
 }
 
-async function setBackground(bg, url) {
-    // Only change the visual background if one is not locked for the current chat.
-    if (!isChatBackgroundLocked()) {
-        $('#bg1').css('background-image', url);
+/**
+ * @typedef {object} BackgroundProvider
+ * @property {(url: string, bg: string, mediaType: string) => boolean} test
+ *   Return true if this provider should handle the given url/bg.
+ * @property {(target: HTMLElement, url: string, bg: string, mediaType: string) => (void | Promise<void>)} apply
+ *   Apply the background to `target` (the #bg1 element). Provider owns the
+ *   visual. The built-in image fallback is skipped when a provider matches.
+ * @property {string} [mediaType] Optional label for the provider's media type.
+ */
+
+/** @type {BackgroundProvider[]} */
+const backgroundProviders = [];
+
+/**
+ * Register a custom background provider. The first provider whose `test`
+ * returns true handles the apply step. Use this instead of overriding
+ * `window.setBackground` — it composes cleanly with other providers and
+ * with the built-in image behavior (which is tried last).
+ *
+ * @param {BackgroundProvider} provider
+ */
+export function registerBackgroundProvider(provider) {
+    if (!provider || typeof provider.test !== 'function' || typeof provider.apply !== 'function') {
+        console.warn('[backgrounds] registerBackgroundProvider: provider must have { test, apply } functions — ignored');
+        return;
     }
+    backgroundProviders.push(provider);
+}
+
+/**
+ * Infer a coarse media-type label from a url/filename. Extensions can
+ * override on a per-case basis by inspecting the payload in BACKGROUND_CHANGED.
+ * @param {string} url
+ * @param {string} bg
+ */
+export function detectBackgroundMediaType(url, bg) {
+    const lower = String(url || bg || '').toLowerCase();
+    if (/\.(mp4|webm|mov|m4v)([?#]|$)/.test(lower)) return 'video';
+    if (/youtube\.com\/|youtu\.be\//.test(lower)) return 'youtube';
+    if (/\.(gif|png|jpe?g|webp|avif|bmp|svg)([?#]|$)/.test(lower)) return 'image';
+    return 'image';
+}
+
+export async function setBackground(bg, url) {
+    const mediaType = detectBackgroundMediaType(url, bg);
+
+    if (!isChatBackgroundLocked()) {
+        const target = document.getElementById('bg1');
+        const provider = backgroundProviders.find(p => {
+            try { return p.test(url, bg, mediaType); }
+            catch (err) { console.warn('[backgrounds] provider.test threw, skipping:', err); return false; }
+        });
+        if (provider && target) {
+            try {
+                await provider.apply(target, url, bg, mediaType);
+            } catch (err) {
+                console.warn('[backgrounds] provider.apply failed, falling back to image:', err);
+                $('#bg1').css('background-image', url);
+            }
+        } else {
+            $('#bg1').css('background-image', url);
+        }
+    }
+
     background_settings.name = bg;
     background_settings.url = url;
     saveSettingsDebounced();
+
+    eventSource.emit(event_types.BACKGROUND_CHANGED, { bg, url, mediaType });
 }
 
 async function delBackground(bg) {
@@ -1691,6 +1752,16 @@ export function getActiveBackgroundTab() {
 }
 
 export function initBackgrounds() {
+    // Publish the public background API on the SillyTavern global so
+    // extensions can reach it without deep-importing ../../scripts/backgrounds.js.
+    if (globalThis.SillyTavern) {
+        globalThis.SillyTavern.backgrounds = {
+            setBackground,
+            registerBackgroundProvider,
+            detectMediaType: detectBackgroundMediaType,
+        };
+    }
+
     eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
     eventSource.on(event_types.FORCE_SET_BACKGROUND, forceSetBackground);
 

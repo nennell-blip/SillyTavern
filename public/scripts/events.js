@@ -121,6 +121,11 @@ export const event_types = {
     // { list: HTMLElement|null, worldName, data, entryCount }.
     // Replaces the `window.displayWorldEntries = ...` monkey-patch.
     WORLDINFO_LIST_RENDERED: 'worldinfo_list_rendered',
+    // Fired whenever setBackground() finishes applying a background.
+    // Payload: { bg: string, url: string, mediaType: 'image'|'video'|'youtube'|string }.
+    // Replaces the `window.setBackground = ...` monkey-patch for extensions
+    // that just need to react to changes without taking over the apply step.
+    BACKGROUND_CHANGED: 'background_changed',
 };
 
 export const eventSource = new EventEmitter([
