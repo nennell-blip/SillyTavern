@@ -10907,9 +10907,19 @@ export async function doNavbarIconClick() {
                 await resetScrollHeight($(textarea));
             }
         }
+
+        eventSource.emit(event_types.PANEL_SHOWN, {
+            panelId: targetDrawerID,
+            drawer: drawer[0] ?? null,
+        });
     } else if (drawerWasOpenAlready) {
         icon.toggleClass('closedIcon openIcon');
         drawer.toggleClass('closedDrawer openDrawer');
+
+        eventSource.emit(event_types.PANEL_HIDDEN, {
+            panelId: targetDrawerID,
+            drawer: drawer[0] ?? null,
+        });
     }
 }
 

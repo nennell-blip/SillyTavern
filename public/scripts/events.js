@@ -135,6 +135,11 @@ export const event_types = {
     // Payload: { list: HTMLElement|null, avatars: string[], page: number }.
     // Replaces MutationObserver patterns on #user_avatar_block.
     PERSONA_LIST_RENDERED: 'persona_list_rendered',
+    // Fired when a drawer panel opens. Payload: { panelId, drawer }.
+    // Replaces MutationObservers that watch `.openDrawer` class changes.
+    PANEL_SHOWN: 'panel_shown',
+    // Fired when a drawer panel closes. Payload: { panelId, drawer }.
+    PANEL_HIDDEN: 'panel_hidden',
 };
 
 export const eventSource = new EventEmitter([
