@@ -108,9 +108,21 @@ export const event_types = {
     ITEMIZED_PROMPTS_LOADED: 'itemized_prompts_loaded',
     ITEMIZED_PROMPTS_SAVED: 'itemized_prompts_saved',
     ITEMIZED_PROMPTS_DELETED: 'itemized_prompts_deleted',
+    // Fired after the chat-completion prompt-manager list finishes rendering
+    // its <li> items. Payload: { list: HTMLElement, prefix: string,
+    // characterId: number|null, promptCount: number }. Extensions should
+    // subscribe to this instead of running a MutationObserver on the list.
+    PROMPT_LIST_RENDERED: 'prompt_list_rendered',
 };
 
-export const eventSource = new EventEmitter([event_types.APP_READY, event_types.APP_INITIALIZED]);
+export const eventSource = new EventEmitter([
+    event_types.APP_READY,
+    event_types.APP_INITIALIZED,
+    // Auto-fire so extensions that subscribe *after* the first render still
+    // get invoked with the most recent list. Matches the autoFire semantics
+    // of APP_READY — "I'm here, catch me up".
+    event_types.PROMPT_LIST_RENDERED,
+]);
 
 /**
  * Resolves once the app has finished booting (after `APP_READY` fires).

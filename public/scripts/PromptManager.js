@@ -1694,7 +1694,7 @@ class PromptManager {
             let detachSpanHtml = '';
             if (this.isPromptDeletionAllowed(prompt)) {
                 detachSpanHtml = `
-                    <span title="Remove" class="prompt-manager-detach-action caution fa-solid fa-chain-broken fa-xs"></span>
+                    <span title="Remove" class="prompt-manager-detach-action caution fa-solid fa-chain-broken fa-xs" data-st-role="prompt-detach"></span>
                 `;
             } else {
                 detachSpanHtml = '<span class="fa-solid"></span>';
@@ -1703,7 +1703,7 @@ class PromptManager {
             let editSpanHtml = '';
             if (this.isPromptEditAllowed(prompt)) {
                 editSpanHtml = `
-                    <span title="edit" class="prompt-manager-edit-action fa-solid fa-pencil fa-xs"></span>
+                    <span title="edit" class="prompt-manager-edit-action fa-solid fa-pencil fa-xs" data-st-role="prompt-edit"></span>
                 `;
             } else {
                 editSpanHtml = '<span class="fa-solid"></span>';
@@ -1712,7 +1712,7 @@ class PromptManager {
             let toggleSpanHtml = '';
             if (this.isPromptToggleAllowed(prompt)) {
                 toggleSpanHtml = `
-                    <span class="prompt-manager-toggle-action ${listEntry.enabled ? 'fa-solid fa-toggle-on' : 'fa-solid fa-toggle-off'}"></span>
+                    <span class="prompt-manager-toggle-action ${listEntry.enabled ? 'fa-solid fa-toggle-on' : 'fa-solid fa-toggle-off'}" data-st-role="prompt-toggle" data-st-enabled="${listEntry.enabled}"></span>
                 `;
             } else {
                 toggleSpanHtml = '<span class="fa-solid"></span>';
@@ -1737,9 +1737,9 @@ class PromptManager {
             const roleTitle = promptRoles[iconLookup]?.roleTitle || '';
 
             listItemHtml += `
-                <li class="${prefix}prompt_manager_prompt ${draggableClass} ${enabledClass} ${markerClass} ${importantClass}" data-pm-identifier="${escapeHtml(prompt.identifier)}">
-                    <span class="drag-handle">☰</span>
-                    <span class="${prefix}prompt_manager_prompt_name" data-pm-name="${encodedName}">
+                <li class="${prefix}prompt_manager_prompt ${draggableClass} ${enabledClass} ${markerClass} ${importantClass}" data-pm-identifier="${escapeHtml(prompt.identifier)}" data-st-role="prompt-item">
+                    <span class="drag-handle" data-st-role="prompt-drag-handle">☰</span>
+                    <span class="${prefix}prompt_manager_prompt_name" data-pm-name="${encodedName}" data-st-role="prompt-name">
                         ${isMarkerPrompt ? '<span class="fa-fw fa-solid fa-thumb-tack" title="Marker"></span>' : ''}
                         ${isSystemPrompt ? '<span class="fa-fw fa-solid fa-square-poll-horizontal" title="Global Prompt"></span>' : ''}
                         ${isImportantPrompt ? '<span class="fa-fw fa-solid fa-star" title="Important Prompt"></span>' : ''}
@@ -1780,6 +1780,17 @@ class PromptManager {
 
         Array.from(promptManagerList.querySelectorAll('.prompt-manager-toggle-action')).forEach(el => {
             el.addEventListener('click', this.handleToggle);
+        });
+
+        // Signal to extensions that the prompt list was (re)rendered.
+        // Replaces the MutationObserver-on-prompt-list pattern extensions
+        // have had to rely on. Payload carries the container + prefix so
+        // subscribers can decorate without re-querying.
+        eventSource.emit(event_types.PROMPT_LIST_RENDERED, {
+            list: promptManagerList,
+            prefix,
+            characterId: this.activeCharacter?.id ?? null,
+            promptCount: this.getPromptsForCharacter(this.activeCharacter).length,
         });
     }
 
