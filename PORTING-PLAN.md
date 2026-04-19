@@ -57,7 +57,7 @@ its own commit with Playwright verification:
 | 11 | ui (tabs, overhaul, global decorators, settings) | 3,456 | `ui/` | various ST core files + `scripts/ui/nemo-tabs.js` |
 | 12 | backgrounds | 3,920 | `features/backgrounds/` | `scripts/backgrounds.js` (half already ported; collapse remaining UI) |
 | 13 | connection | 4,731 | `features/connection/` | `scripts/connection-manager.js` or new `scripts/connection-pool.js` |
-| 14 | directives | 5,178 | `features/directives/` | new `scripts/directives/` dir (feature is dense enough to own its own folder) |
+| 14 | directives | 5,178 | `features/directives/` | **fold into `scripts/macros.js` + `scripts/macros/macro-system.js`** as registered macros. Directives are metadata tokens embedded in prompt content — same conceptual shape as `{{user}}`, `{{random::}}`, etc. Not a separate feature. Merge the parser (`prompt-directives.js`) into the macro-registration path and delete the standalone module. |
 | 15 | guides | 5,182 | `features/guides/` | new `scripts/guides/` + `scripts/onboarding/` |
 | 16 | onboarding | 3,176 | `features/onboarding/` | merged with guides |
 | 17 | prompts | 10,035 | `features/prompts/` | most logic folds into existing `scripts/PromptManager.js` + `scripts/preset-manager.js`; the Category Tray (3,207 LOC) likely stays as a dedicated new module |
