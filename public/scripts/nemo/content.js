@@ -14,7 +14,8 @@ import { NemoGlobalUI } from './ui/global-ui.js';
 import { UserSettingsTabs } from './ui/user-settings-tabs.js';
 import { AdvancedFormattingTabs } from './ui/advanced-formatting-tabs.js';
 import { ExtensionsTabOverhaul } from './ui/extensions-tab-overhaul.js';
-import { initializeThemes, initThemeSelector } from './ui/theme-manager.js';
+// theme-manager.js removed — special themes (win98/discord/cyberpunk/nemotavern)
+// are out of scope for the fork; ST's native theme system stays unchanged.
 
 // Feature modules - Prompts
 import { NemoPresetManager, loadAndSetDividerRegex } from './features/prompts/prompt-manager.js';
@@ -112,10 +113,6 @@ async function initializeExtension() {
         initializeStorage();
         migrateFromLocalStorage();
 
-        // Initialize UI themes early (before other UI elements load)
-        console.log('🔧 NemoNet: Initializing UI themes...');
-        await initializeThemes();
-
         await loadAndSetDividerRegex();
 
         // Initialize all modules
@@ -124,9 +121,6 @@ async function initializeExtension() {
         console.log('🔧 NemoNet: Calling NemoSettingsUI.initialize()...');
         NemoSettingsUI.initialize();
         console.log('🔧 NemoNet: NemoSettingsUI.initialize() returned');
-
-        // Initialize theme selector UI handlers (after settings UI is loaded)
-        initThemeSelector();
 
         NemoGlobalUI.initialize();
         NemoMarketplace.initialize();
