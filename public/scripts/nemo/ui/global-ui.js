@@ -162,25 +162,10 @@ export const NemoGlobalUI = {
             convertTargets(); // Initial run
         };
 
-        // This observer's only job is to find the left panel and then stop.
-        const bodyObserver = new MutationObserver((mutations, obs) => {
-            const leftNavPanel = document.querySelector(SELECTORS.leftNavPanel);
-            if (leftNavPanel) {
-                obs.disconnect(); // Stop watching the body to prevent observer wars.
-
-                // Start the specific, targeted observer for the left panel.
-                setupPanelObserver(leftNavPanel);
-
-                // Initialize global elements that are not in the left panel.
-                const stopButton = document.querySelector(SELECTORS.stopButton);
-                if (stopButton && !stopButton.dataset.nemoAnimated) {
-                    this.initializeStopButtonAnimation();
-                    stopButton.dataset.nemoAnimated = 'true';
-                }
-            }
-        });
-
-        // Check immediately if the panel already exists
+        // nemo boots from script.js's firstLoadInit AFTER APP_READY fires,
+        // so #left-nav-panel is guaranteed to be in the DOM. The old
+        // bodyObserver fallback that watched document.body for the panel
+        // to appear is dead code after Stage A wiring; gone.
         const existingPanel = document.querySelector(SELECTORS.leftNavPanel);
         if (existingPanel) {
             setupPanelObserver(existingPanel);
@@ -190,7 +175,7 @@ export const NemoGlobalUI = {
                 stopButton.dataset.nemoAnimated = 'true';
             }
         } else {
-            bodyObserver.observe(document.body, { childList: true, subtree: true });
+            console.warn(`${LOG_PREFIX} Global UI: #left-nav-panel not found at init — ST core boot order changed?`);
         }
         console.log(`${LOG_PREFIX} Global UI module initialized.`);
     }
