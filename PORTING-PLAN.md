@@ -35,9 +35,32 @@ namespace into something more core-appropriate.
 
 ### Stage C — "Features become core"
 
-Per-feature: use the hooks we shipped on the `nemo-integration` branch,
-delete the per-feature extension code where it duplicates ST core,
-fold the remaining logic into ST's natural home file.
+**Per-feature rule:** each nemo feature's code merges into its
+corresponding ST core file, not into a new sibling `scripts/<feature>/`
+directory. The goal is that the fork reads like ST with more
+capability, not like ST-with-a-bolted-on-folder.
+
+Merge targets (not "move to a new dir"):
+- Prompt Manager overhaul → `scripts/openai.js` + `scripts/PromptManager.js`
+- Extensions tab overhaul → `scripts/extensions.js`
+- Directives → `scripts/macros.js` + `scripts/macros/macro-system.js`
+- World info UI → `scripts/world-info.js`
+- Persona UI → `scripts/personas.js`
+- Backgrounds overhaul → `scripts/backgrounds.js`
+- Reasoning parser → `scripts/reasoning.js`
+- Character manager → `scripts/RossAscends-mods.js` (where char-list logic already lives)
+- Panel toggle → `scripts/RossAscends-mods.js` + user-settings template
+- Connection/model selector → `scripts/preset-manager.js` + `scripts/textgen-settings.js`
+
+Per-feature port shape:
+1. Read the ST core file for that concern. Understand its class/function surface.
+2. Merge the nemo feature's logic as native methods/fields on that core class, or as new functions in that file.
+3. Move any new DOM fragments into the corresponding ST template.
+4. Move settings from `extension_settings.NemoPresetExt.*` to `power_user.*` with migration.
+5. Add the checkbox/UI toggle (if any) to ST's native settings UI, not the nemo settings panel.
+6. Delete the nemo feature directory.
+7. Remove its import from `scripts/nemo/content.js`.
+8. Playwright verify before commit.
 
 Priority order (ascending LOC / risk) — fence each feature off behind
 its own commit with Playwright verification:
