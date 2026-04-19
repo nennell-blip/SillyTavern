@@ -797,6 +797,15 @@ async function firstLoadInit() {
     await initLoaderHandle.hide();
     await fixViewport();
     await eventSource.emit(event_types.APP_READY);
+
+    // Boot the nemo core bundle. Formerly the "NemoPresetExt" extension;
+    // now baseline fork code, loaded unconditionally after APP_READY. Kept
+    // under a single import so the whole bundle can be torn apart into
+    // native ST modules incrementally without rewriting boot wiring.
+    // See PORTING-PLAN.md (Stage A).
+    import('./scripts/nemo/content.js').catch((err) => {
+        console.error('[nemo] boot failed:', err);
+    });
 }
 
 async function fixViewport() {
