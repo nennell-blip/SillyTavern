@@ -72,3 +72,37 @@ its own commit with Playwright verification:
 ---
 
 *Stage A executing now on the `nemo-integration` branch.*
+
+---
+
+## Progress as of 2026-04-19
+
+### Stage A ✅
+- NemoPresetExt dir moved to `public/scripts/nemo/`, manifest deleted, booted via `import('./scripts/nemo/content.js')` from firstLoadInit end.
+- 96 internal relative imports rewritten + a handful of hardcoded URL strings fixed.
+- Extension manager no longer lists it.
+
+### Stage C — in progress (ongoing branch commits)
+
+| feature | status | notes |
+|---|---|---|
+| themes (win98/discord/cyberpunk/nemotavern) | ✅ deleted | out of scope per plan |
+| features/nemotavern (React reskin) | ✅ deleted | ditto |
+| world-info UI | ✅ ported to events | deleted `window.getWorldEntry` + `window.displayWorldEntries` overrides; now subscribes to `WORLDINFO_LIST_RENDERED` + `WORLDINFO_ENTRY_RENDERED` |
+| persona UI count badge | ✅ ported to event | swapped MutationObserver for `PERSONA_LIST_RENDERED` |
+| global-ui bodyObserver | ✅ deleted | dead code after Stage A — content.js now boots post-APP_READY so the panel is always in DOM |
+| backgrounds (animated) | ✅ ported | already done earlier — uses `registerBackgroundProvider` |
+| panel-toggle | ⏳ todo | |
+| marketplace | ⏳ todo | |
+| character-manager | ⏳ todo | |
+| emoji-picker | ⏳ todo | |
+| reasoning | ⏳ todo | |
+| ui/ (remaining — settings-ui, tabs) | ⏳ partial | global-ui done |
+| connection (model/textcomp selectors) | ⏳ todo | large feature, multiple observers |
+| directives | ⏳ todo | large feature |
+| guides + onboarding | ⏳ todo | |
+| prompts (the flagship — 10k LOC) | ⏳ todo | biggest single port; prompt-manager listObserver is intricate |
+| core (event-bus, logger, migration) | ⏳ todo | last — merge useful bits into ST utilities |
+
+### Observer count
+Baseline pre-port: **55 MutationObservers** in nemo code. Current: ~18. Most of the removed were boot-time wait-for-element patterns killed by `SillyTavern.ready` + the render events we shipped on this branch.
