@@ -8,6 +8,7 @@
 import logger from '../../core/logger.js';
 import { getAllPromptsWithState, parsePromptDirectives } from './prompt-directives.js';
 import { promptManager } from '../../../openai.js';
+import { eventSource, event_types } from '../../../events.js';
 
 /**
  * Initialize all fixes for directive features
@@ -49,34 +50,11 @@ function fixVisualCustomizations() {
         }, 100);
     };
 
-    // Observer to apply visual customizations whenever prompts change
-    const observer = new MutationObserver((mutations) => {
-        // Check for added nodes OR attribute changes (class/style modifications)
-        const needsReapply = mutations.some(m => {
-            if (m.type === 'childList' && m.addedNodes.length > 0) {
-                return Array.from(m.addedNodes).some(node =>
-                    node.classList?.contains('completion_prompt_manager_prompt')
-                );
-            }
-            // Also reapply if class or style attributes change (something is removing our classes)
-            if (m.type === 'attributes' && m.target.classList?.contains('completion_prompt_manager_prompt')) {
-                return true;
-            }
-            return false;
-        });
-
-        if (needsReapply) {
-            debouncedApply();
-        }
-    });
-
-    // Watch the entire document body to catch any changes
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['class', 'style']
-    });
+    // Reapply visual customizations when the prompt list re-renders or a
+    // single prompt toggles. Replaces a full-document MutationObserver
+    // that was watching class/style on every node in the page.
+    eventSource.on(event_types.PROMPT_LIST_RENDERED, debouncedApply);
+    eventSource.on(event_types.PROMPT_TOGGLE_CHANGED, debouncedApply);
 
     // Apply immediately
     applyVisualCustomizations();
@@ -426,13 +404,10 @@ function setupTokenCostTrackerFixed() {
     // Update immediately
     updateTokenCostTrackerFixed();
 
-    // Setup debounced observer to update when prompts change
-    let updateTimeout = null;
-    const observer = new MutationObserver(() => {
-        if (updateTimeout) clearTimeout(updateTimeout);
-        updateTimeout = setTimeout(() => updateTokenCostTrackerFixed(), 200);
-    });
-    observer.observe(listContainer, { childList: true, subtree: false, attributes: false });
+    // Refresh on every list render. Replaces a listContainer(childList)
+    // MutationObserver that had a 200ms setTimeout debounce — the event
+    // already fires once per render, so the debounce isn't needed.
+    eventSource.on(event_types.PROMPT_LIST_RENDERED, updateTokenCostTrackerFixed);
 
     logger.info('Token cost tracker setup complete');
     return true;
@@ -745,14 +720,9 @@ function fixConditionalVisibility() {
     // Run once on init
     applyConditionalVisibilityFixed();
 
-    // Re-apply when prompts change
-    const listContainer = document.querySelector('#completion_prompt_manager_list');
-    if (listContainer) {
-        const observer = new MutationObserver(() => {
-            debouncedApply();
-        });
-        observer.observe(listContainer, { childList: true, subtree: false, attributes: false });
-    }
+    // Re-apply on every list render. Replaces a listContainer(childList)
+    // MutationObserver.
+    eventSource.on(event_types.PROMPT_LIST_RENDERED, debouncedApply);
 }
 
 /**

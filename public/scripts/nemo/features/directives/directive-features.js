@@ -9,6 +9,7 @@ import logger from '../../core/logger.js';
 import { getAllPromptsWithState, parsePromptDirectives } from './prompt-directives.js';
 import { promptManager } from '../../../openai.js';
 import { getContext } from '../../../extensions.js';
+import { eventSource, event_types } from '../../../events.js';
 
 /**
  * Initialize all directive-based features
@@ -395,12 +396,11 @@ function setupTokenCostTracker() {
         // Update immediately
         updateTokenCostTracker();
 
-        // Setup observer to update when prompts change
-        const observer = new MutationObserver(() => {
-            updateTokenCostTracker();
-        });
-
-        observer.observe(listContainer, { childList: true, subtree: true, attributes: true });
+        // Refresh the tracker on every prompt-list render pass. Replaces
+        // the MutationObserver(childList+subtree+attributes) that watched
+        // listContainer for any mutation — PROMPT_LIST_RENDERED now fires
+        // once per render at a guaranteed stable moment.
+        eventSource.on(event_types.PROMPT_LIST_RENDERED, updateTokenCostTracker);
 
         logger.info('Token cost tracker setup complete');
     } catch (error) {
