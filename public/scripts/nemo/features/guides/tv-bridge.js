@@ -57,7 +57,7 @@ export async function isTVAvailable() {
  */
 export async function getSceneContextForTV() {
     try {
-        const { getContext } = await import('../../../../../extensions.js');
+        const { getContext } = await import('../../../extensions.js');
         const context = getContext();
 
         // Read NG's latest scene data from chat variables

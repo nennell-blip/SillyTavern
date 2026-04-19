@@ -590,7 +590,7 @@ export class PromptNavigator {
                 break;
             }
             case 'set_folder_color': {
-                const { showColorPickerPopup } = await import('../../../../../utils.js');
+                const { showColorPickerPopup } = await import('../../../utils.js');
                 const folder = this.metadata.folders[id];
                 if (!folder) return;
                 const color = await showColorPickerPopup(folder.color || '', 'Select Folder Color');

@@ -188,7 +188,7 @@ async function runFullPipeline(direction) {
     // Inject the final refined plan if injection is configured
     const injectConfig = getToolInjectionConfig(TOOL_NAME);
     if (injectConfig && refinedPlan) {
-        const { getContext } = await import('../../../../../extensions.js');
+        const { getContext } = await import('../../../extensions.js');
         const context = getContext();
         try {
             const injectScript = `/inject id=${injectConfig.id} position=${injectConfig.position} depth=${injectConfig.depth} role=${injectConfig.role} ephemeral=${injectConfig.ephemeral} scan=${injectConfig.scan} ${JSON.stringify(refinedPlan)}`;

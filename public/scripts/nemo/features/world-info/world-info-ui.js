@@ -4,7 +4,7 @@ import { debounce, navigation_option } from '../../../../scripts/utils.js';
 import { Popup } from '../../../../scripts/popup.js';
 import { getFreeWorldName, createNewWorldInfo, loadWorldInfo, world_names, saveWorldInfo, createWorldInfoEntry, deleteWorldInfoEntry, deleteWIOriginalDataValue } from '../../../../scripts/world-info.js';
 import { eventSource, event_types } from '../../../../script.js';
-import { accountStorage } from '../../../../../../scripts/util/AccountStorage.js';
+import { accountStorage } from '../../../../scripts/util/AccountStorage.js';
 
 /**
  * @typedef {object} WorldInfoEntry
@@ -786,81 +786,71 @@ export const NemoWorldInfoUI = {
         this.loadPresets();
         const self = this;
 
-        if (window.getWorldEntry && window.displayWorldEntries && $.fn.pagination) {
-            const originalGetWorldEntry = window.getWorldEntry;
-            window.getWorldEntry = async function(...args) {
-                const entryEl = await originalGetWorldEntry.apply(this, args);
-                return entryEl;
-            };
+        // --- Wire into ST's native world-info render events. ------------
+        // Replaces the window.getWorldEntry / window.displayWorldEntries
+        // monkey-patches we used to do. Core's new events carry both the
+        // element and the worldName/data payload, so we can do everything
+        // the old wrappers did without swapping functions.
 
-            const originalDisplay = window.displayWorldEntries;
-            window.displayWorldEntries = async function(name, data, ...args) {
-                self._currentWorld.name = name;
-                self._currentWorld.data = data;
+        eventSource.on(event_types.WORLDINFO_LIST_RENDERED, ({ worldName, data }) => {
+            if (!worldName) return;
+            self._currentWorld.name = worldName;
+            self._currentWorld.data = data;
+            const emptyState = document.getElementById('nemo-wi-empty-state');
+            const entriesContent = document.getElementById('nemo-wi-entries-content');
+            if (emptyState) emptyState.style.display = 'none';
+            if (entriesContent) entriesContent.style.display = '';
+        });
 
-                // Show entries content, hide empty state
-                const emptyState = document.getElementById('nemo-wi-empty-state');
-                const entriesContent = document.getElementById('nemo-wi-entries-content');
-                if (emptyState) emptyState.style.display = 'none';
-                if (entriesContent) entriesContent.style.display = '';
+        eventSource.on(event_types.WORLDINFO_ENTRY_RENDERED, ({ element, worldName }) => {
+            if (!element || !element[0]) return;
+            const entryEl = element[0];
+            if (entryEl.dataset.nemoListenersAdded) return;
+            entryEl.dataset.nemoListenersAdded = 'true';
 
-                // Call the original display function and let it handle the rendering
-                const result = await originalDisplay.apply(this, [name, data, ...args]);
+            entryEl.setAttribute('draggable', 'true');
+            entryEl.addEventListener('dragstart', (event) => {
+                if (self._selectedEntries.size > 0) {
+                    event.dataTransfer.setData('text/plain', JSON.stringify([...self._selectedEntries]));
+                }
+            });
+            entryEl.addEventListener('click', (event) => {
+                const uid = entryEl.getAttribute('uid');
+                if (!uid) return;
 
-                // The original function now handles populating the list,
-                // so we just need to add our custom event listeners to the entries.
-                const entriesList = document.getElementById('world_popup_entries_list');
-                entriesList.querySelectorAll('.world_entry').forEach(entryEl => {
-                    // Prevent re-adding listeners if they already exist
-                    if (entryEl.dataset.nemoListenersAdded) return;
-                    entryEl.dataset.nemoListenersAdded = 'true';
+                if (self._selectionBook && self._selectionBook !== worldName) {
+                    self._selectedEntries.clear();
+                    document.querySelectorAll('.world_entry.nemo-entry-selected').forEach(el => el.classList.remove('nemo-entry-selected'));
+                }
+                self._selectionBook = worldName;
 
-                    entryEl.setAttribute('draggable', 'true');
-                    entryEl.addEventListener('dragstart', /** @param {DragEvent} event */(event) => {
-                        if (self._selectedEntries.size > 0) {
-                            event.dataTransfer.setData('text/plain', JSON.stringify([...self._selectedEntries]));
-                        }
+                if (event.shiftKey && self._lastSelectedEntry) {
+                    const entriesList = document.getElementById('world_popup_entries_list');
+                    const allEntries = Array.from(entriesList.querySelectorAll('.world_entry'));
+                    const start = allEntries.findIndex(el => el.getAttribute('uid') === self._lastSelectedEntry);
+                    const end = allEntries.findIndex(el => el.getAttribute('uid') === uid);
+                    const range = allEntries.slice(Math.min(start, end), Math.max(start, end) + 1);
+                    range.forEach(el => {
+                        self._selectedEntries.add(el.getAttribute('uid'));
+                        el.classList.add('nemo-entry-selected');
                     });
-                    entryEl.addEventListener('click', /** @param {MouseEvent} event */(event) => {
-                        const uid = entryEl.getAttribute('uid');
-                        if (!uid) return;
-
-                        if (self._selectionBook && self._selectionBook !== name) {
-                            self._selectedEntries.clear();
-                            document.querySelectorAll('.world_entry.nemo-entry-selected').forEach(el => el.classList.remove('nemo-entry-selected'));
-                        }
-                        self._selectionBook = name;
-
-                        if (event.shiftKey && self._lastSelectedEntry) {
-                            const allEntries = Array.from(entriesList.querySelectorAll('.world_entry'));
-                            const start = allEntries.findIndex(el => el.getAttribute('uid') === self._lastSelectedEntry);
-                            const end = allEntries.findIndex(el => el.getAttribute('uid') === uid);
-                            const range = allEntries.slice(Math.min(start, end), Math.max(start, end) + 1);
-                            range.forEach(el => {
-                                self._selectedEntries.add(el.getAttribute('uid'));
-                                el.classList.add('nemo-entry-selected');
-                            });
-                        } else if (event.ctrlKey) {
-                            if (self._selectedEntries.has(uid)) {
-                                self._selectedEntries.delete(uid);
-                                entryEl.classList.remove('nemo-entry-selected');
-                            } else {
-                                self._selectedEntries.add(uid);
-                                entryEl.classList.add('nemo-entry-selected');
-                            }
-                        } else {
-                            document.querySelectorAll('.world_entry.nemo-entry-selected').forEach(el => el.classList.remove('nemo-entry-selected'));
-                            self._selectedEntries.clear();
-                            self._selectedEntries.add(uid);
-                            entryEl.classList.add('nemo-entry-selected');
-                        }
-                        self._lastSelectedEntry = uid;
-                    });
-                });
-
-                return result;
-            };
-        }
+                } else if (event.ctrlKey) {
+                    if (self._selectedEntries.has(uid)) {
+                        self._selectedEntries.delete(uid);
+                        entryEl.classList.remove('nemo-entry-selected');
+                    } else {
+                        self._selectedEntries.add(uid);
+                        entryEl.classList.add('nemo-entry-selected');
+                    }
+                } else {
+                    document.querySelectorAll('.world_entry.nemo-entry-selected').forEach(el => el.classList.remove('nemo-entry-selected'));
+                    self._selectedEntries.clear();
+                    self._selectedEntries.add(uid);
+                    entryEl.classList.add('nemo-entry-selected');
+                }
+                self._lastSelectedEntry = uid;
+            });
+        });
 
         eventSource.on(event_types.WORLD_INFO_ACTIVATED, (entryList) => {
             self._activeEntries = entryList;
