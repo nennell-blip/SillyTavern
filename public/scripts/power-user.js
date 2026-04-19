@@ -147,6 +147,11 @@ export const power_user = {
     stream_fade_in: false,
 
     fast_ui_mode: true,
+    // Expand left + right nav panels to 50vw each (each panel covers half
+    // the viewport when open). Useful on wide displays. Ported from the
+    // nemo panel-toggle feature; settings.nemoEnablePanelWidth migrated on
+    // first boot. See public/scripts/nemo/features/panel-toggle (deleted).
+    wide_nav_panels: false,
     avatar_style: avatar_styles.ROUND,
     chat_display: chat_styles.DEFAULT,
     toastr_position: defaultToastPosition,
@@ -977,6 +982,22 @@ function switchUiMode() {
     }
 }
 
+function switchWideNavPanels() {
+    const enabled = !!power_user.wide_nav_panels;
+    const leftPanel = document.getElementById('left-nav-panel');
+    const rightPanel = document.getElementById('right-nav-panel');
+    if (leftPanel) {
+        leftPanel.style.width = enabled ? '50vw' : '';
+        leftPanel.style.left = enabled ? '0' : '';
+    }
+    if (rightPanel) {
+        rightPanel.style.width = enabled ? '50vw' : '';
+        rightPanel.style.right = enabled ? '0' : '';
+        rightPanel.style.left = enabled ? 'auto' : '';
+    }
+    $('#wide_nav_panels').prop('checked', enabled);
+}
+
 function toggleWaifu() {
     $('#waifuMode').trigger('click');
     return '';
@@ -1279,6 +1300,12 @@ function applyTheme(name) {
             key: 'fast_ui_mode',
             action: () => {
                 switchUiMode();
+            },
+        },
+        {
+            key: 'wide_nav_panels',
+            action: () => {
+                switchWideNavPanels();
             },
         },
         {
