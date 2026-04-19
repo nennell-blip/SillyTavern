@@ -1,4 +1,5 @@
 import { LOG_PREFIX } from '../../core/utils.js';
+import { eventSource, event_types } from '../../../../script.js';
 
 /**
  * NemoPersonaUI — Enhanced Persona Management panel with improved UX.
@@ -164,9 +165,11 @@ export const NemoPersonaUI = {
 
         setTimeout(updateCount, 100);
 
-        // Update when personas are added/removed
-        const observer = new MutationObserver(() => setTimeout(updateCount, 50));
-        observer.observe(avatarBlock, { childList: true });
+        // Update on every persona-list render pass. Replaces the
+        // MutationObserver(childList) that used to watch #user_avatar_block
+        // for add/remove — PERSONA_LIST_RENDERED fires exactly once per
+        // repagination (vs. per-child-mutation), so no debounce needed.
+        eventSource.on(event_types.PERSONA_LIST_RENDERED, updateCount);
     },
 
     /**
